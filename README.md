@@ -47,10 +47,8 @@ gn.drawLine({
 ```
 - Call drawCircle() when you want to show a circle/node on the map as having been considered/passed through by the algorithm. The milliseconds associated with each node are used as a measure of time taken to reach that node. Call drawLine() to show the final path found (from start to target node) passing through multiple circles (the pathLine array) after pTime. Generally the algorithm should end after calling gn.drawLine().
 
-- finally pass the routing function to gn.defineRunAlgorithm
-```gn.defineRunAlgorithm(runAlgorithm)```
+- finally pass the routing function to gn.defineRunAlgorithm ```gn.defineRunAlgorithm(runAlgorithm)```
 
-- start the server using 
-```gn.startServer()```
+- start the server by calling ```gn.startServer()```
 
 - navigate to http://localhost:8080/home and click 'Test Algorithm' to run the algorithm and see the output visualization.
