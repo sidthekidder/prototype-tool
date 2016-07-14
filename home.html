@@ -1,0 +1,91 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1.0, user-scalable=yes">
+    <title>Bottle Demo</title>
+
+    <link rel="stylesheet" href="lib/leaflet.css" />
+    <script src="lib/leaflet.js"></script>
+    <script src="lib/jquery.min.js"></script>
+  </head>
+  <body>
+
+    <button id="demo" onclick="startDemo()">Test Algorithm</button>
+    <div id="map" style="height: 640px"></div>
+
+    <script>
+        // Start Target - AM1, Lübeck
+        // var lat1 = 53.8338072;
+        // var lon1 = 10.7001245;
+        var lat1 = 43.7341179;
+        var lon1 = 7.4180124;
+
+        // Goal Target 
+        // var lat2 = 53.8338072;
+        // var lon2 = 10.7044981;
+        var lat2 = 43.7343154;
+        var lon2 = 7.4179286;
+        
+        var range = 0.02;
+        
+        var map = L.map('map');
+        L.tileLayer('http://{s}.tile.osm.org/{z}/{x}/{y}.png').addTo(map);
+        map.setView([lat1, lon1], 15);
+
+        function startDemo() {
+
+            document.getElementById("demo").disabled = true;
+            L.polygon([ // Show loaded range
+                [lat1 + range, lon1 - range],
+                [lat1 + range, lon1 + range],
+                [lat1 - range, lon1 + range],
+                [lat1 - range, lon1 - range]
+            ], { fillOpacity: 0.2 }).addTo(map);
+
+            
+            L.marker([lat1, lon1]).addTo(map);
+            L.marker([lat2, lon2]).addTo(map);
+
+            $.ajax({
+                'url': 'http://localhost:8080/api/route',
+                'method': 'POST',
+                'data': {},
+                'success': function(data) {
+                    Visualize(JSON.parse(data));
+                }
+            });
+        }
+
+        function Visualize(data) {
+            console.log('no of circles: ' + data.circles.length)
+
+            var circles = [];
+            for(var i = 0 ; i < data.circles.length ; i++) {
+                circles.push([data.circles[i]['circleLat'], data.circles[i]['circleLong']]);
+            }
+
+            for(var i = 0 ; i < data.circles.length ; i++) {
+              (function(i) {
+                setTimeout(function() {
+                    L.circle(circles[i], 2).addTo(map);
+                }, data.circles[i]['circleTime']);
+              })(i)
+            }
+
+            if (!data.path.pathLine) {
+                console.log("Couldn't find path.");
+                return;
+            }
+            var pathLine = [];
+            for(var i = 0 ; i < data.path.pathLine.length ; i++) {
+                pathLine.push([data.path.pathLine[i]['nodeLat'], data.path.pathLine[i]['nodeLong']]);
+            }
+            setTimeout(function() {
+                L.polyline(pathLine, { color: 'red' }).addTo(map);
+            }, data.path.pTime);
+        }
+    </script>
+
+  </body>
+</html>
