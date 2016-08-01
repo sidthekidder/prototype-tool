@@ -1,5 +1,5 @@
 import greennav
-from queue import PQueue
+from pqueue import PQueue
 import math
 
 gn = greennav.GreenNav()
