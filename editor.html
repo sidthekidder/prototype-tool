@@ -32,123 +32,106 @@
 <button id="submitButton" onclick="submitAlgorithm()">Run Code!</button>
 <div id="map" style="height: 640px"></div>
 
-<div id="editor">import greennav
-from pqueue import PQueue
-import math
+<div id="editor">
+  def routingAlgorithm():
+    # define helper methods
+    def nodeWithShortestDistance(frontier):
+        distance = float('inf')
+        shortestId = None
+        
+        for key, val in frontier.iteritems():
+            if val['distance'] < distance:
+                distance = val['distance']
+                shortestId = key
+        
+        return gn.nodeCache[shortestId]
 
-gn = greennav.GreenNav()
+    def getNextNodes(node):
+      for key in gn.wayCache:
+        for inode in gn.wayCache[key]:
+          if gn.nodeCache[inode]['id'] == node['id']:
+            retArr = []
 
-def runAlgorithm(startNode, endNode):
-  # SAMPLE ALGORITHM
-  
-  # define helper methods
-  def nodeWithShortestDistance(frontier):
-      distance = float('inf')
-      shortestId = None
-      
-      for key, val in frontier.iteritems():
-          if val['distance'] < distance:
-              distance = val['distance']
-              shortestId = key
-      
-      return gn.nodeCache[shortestId]
+            for key2 in gn.wayCache[key]:
+              retArr.append(key2)
+            return retArr
+      return []
 
-  def getNextNodes(node):
-    for key in gn.wayCache:
-      for inode in gn.wayCache[key]:
-        if gn.nodeCache[inode]['id'] == node['id']:
-          retArr = []
+    def costBetweenTwoNodes(node1, node2):
+        radlat1 = math.pi * node1['lat']/180
+        radlat2 = math.pi * node2['lat']/180
+        radlon1 = math.pi * node1['lon']/180
+        radlon2 = math.pi * node2['lon']/180
 
-          for key2 in gn.wayCache[key]:
-            retArr.append(key2)
-          return retArr
-    
-    # if node['id'] in gn.wayCache:
-    #   print("YES ITS IN WAYCACHE")
-    #   print(gn.wayCache[node['id']])
-    #   for key,val in gn.wayCache[node['id']].iteritems():
-    #     nextNodes.append(gn.nodeCache[key])
-    return []
+        theta = node1['lon'] - node2['lon']
+        radtheta = math.pi * theta/180
 
-  def costBetweenTwoNodes(node1, node2):
-      radlat1 = math.pi * node1['lat']/180
-      radlat2 = math.pi * node2['lat']/180
-      radlon1 = math.pi * node1['lon']/180
-      radlon2 = math.pi * node2['lon']/180
+        dist = math.sin(radlat1) * math.sin(radlat2) + math.cos(radlat1) * math.cos(radlat2) * math.cos(radtheta)
 
-      theta = node1['lon'] - node2['lon']
-      radtheta = math.pi * theta/180
+        dist = math.acos(dist)
+        dist = dist * 180/math.pi
+        dist = dist * 60 * 1.1515
+        dist = dist * 1.609344 * 1000
 
-      dist = math.sin(radlat1) * math.sin(radlat2) + math.cos(radlat1) * math.cos(radlat2) * math.cos(radtheta)
+        return dist
 
-      dist = math.acos(dist)
-      dist = dist * 180/math.pi
-      dist = dist * 60 * 1.1515
-      dist = dist * 1.609344 * 1000
+    def costFromStart(node):
+      return costBetweenTwoNodes(startNode, node)
 
-      return dist
+    def costTillGoal(node):
+      return costBetweenTwoNodes(node, endNode)
 
-  def costFromStart(node):
-    return costBetweenTwoNodes(startNode, node)
+    # start the computation!
+    maxSteps = 1000
 
-  def costTillGoal(node):
-    return costBetweenTwoNodes(node, endNode)
+    node = startNode
+    node['prevCost'] = 0
 
-  # start the computation!
-  maxSteps = 1000
+    pq = PQueue()
+    alreadyExplored = {}
+    # cost function = costTillNow + costTillGoal
+    fstart = 0 + costTillGoal(node)
+    pq.put(node, fstart)
 
-  node = startNode
-  node['prevCost'] = 0
+    print("Starting computation.")
 
-  pq = PQueue()
-  alreadyExplored = {}
-  # cost function = costTillNow + costTillGoal
-  fstart = 0 + costTillGoal(node)
-  pq.put(node, fstart)
-  
-  print("Starting computation.")
-  
-  while not pq.isEmpty() and maxSteps > 0:
-    curNode = pq.get()
+    while not pq.isEmpty() and maxSteps > 0:
+      curNode = pq.get()
 
-    if curNode['id'] in alreadyExplored:
-      maxSteps = maxSteps - 1
-      continue
-    alreadyExplored[curNode['id']] = True
-
-    # if goal found
-    if curNode['id'] == endNode['id']:
-      print("Found a path.")
-      
-      latLng = []
-      while 'previous' in curNode:
-          latLng.append({'nodeLat': curNode['lat'], 'nodeLong': curNode['lon']})
-          curNode = curNode['previous']
-
-      gn.drawLine({'pTime': 10000 - maxSteps*10, 'pathLine': latLng})
-      break
-    
-    # for each neighbor node
-    nextNodes = getNextNodes(curNode)
-    for i in range(0, len(nextNodes)):
-      nextNode = gn.nodeCache[nextNodes[i]]
-
-      if nextNode['id'] in alreadyExplored:
+      if curNode['id'] in alreadyExplored:
+        maxSteps = maxSteps - 1
         continue
+      alreadyExplored[curNode['id']] = True
 
-      nextNode['previous'] = curNode
-      nextNode['prevCost'] = curNode['prevCost'] + costBetweenTwoNodes(curNode, nextNode) 
+      # if goal found
+      if curNode['id'] == endNode['id']:
+        print("Found a path.")
+        
+        latLng = []
+        while 'previous' in curNode:
+            latLng.append({'nodeLat': curNode['lat'], 'nodeLong': curNode['lon']})
+            curNode = curNode['previous']
 
-      # cost function = costTillNow + costTillGoal
-      fn = nextNode['prevCost'] + costTillGoal(nextNode)
-      pq.put(nextNode, fn)
-      gn.drawCircle({'circleLat': curNode['lat'], 'circleLong': curNode['lon'], 'circleTime': 10000 - maxSteps*10})
+        gn.drawLine({'pTime': 10000 - maxSteps*10, 'pathLine': latLng})
+        break
+      
+      # for each neighbor node
+      nextNodes = getNextNodes(curNode)
+      for i in range(0, len(nextNodes)):
+        nextNode = gn.nodeCache[nextNodes[i]]
 
-    maxSteps = maxSteps - 1
+        if nextNode['id'] in alreadyExplored:
+          continue
 
+        nextNode['previous'] = curNode
+        nextNode['prevCost'] = curNode['prevCost'] + costBetweenTwoNodes(curNode, nextNode) 
 
-gn.defineRunAlgorithm(runAlgorithm)
-gn.startServer()         
+        # cost function = costTillNow + costTillGoal
+        fn = nextNode['prevCost'] + costTillGoal(nextNode)
+        pq.put(nextNode, fn)
+        gn.drawCircle({'circleLat': curNode['lat'], 'circleLong': curNode['lon'], 'circleTime': 10000 - maxSteps*10})
+
+      maxSteps = maxSteps - 1
 </div>
         
 <script src="static/ace.js" type="text/javascript" charset="utf-8"></script>
@@ -193,7 +176,7 @@ gn.startServer()
         L.marker([lat2, lon2]).addTo(map)
 
         $.ajax({
-            url: 'http://localhost:9091/api/runcode',
+            url: 'http://localhost:9094/api/runcode',
             method: 'POST',
             data: {
                 code: code.toString()
