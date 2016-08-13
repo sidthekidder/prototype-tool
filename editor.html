@@ -176,7 +176,7 @@
         L.marker([lat2, lon2]).addTo(map)
 
         $.ajax({
-            url: 'http://localhost:9094/api/runcode',
+            url: 'http://localhost:9494/api/runcode',
             method: 'POST',
             data: {
                 code: code.toString()

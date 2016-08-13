@@ -5,6 +5,7 @@ import requests
 import os
 import sys
 import StringIO
+import traceback
 root = os.getcwd()
 
 # HARDCODED DATA
@@ -149,11 +150,25 @@ def overallFunc():
 
     maxSteps = maxSteps - 1
 """
-
-    exec algorithm
+    print "Execing"
+    try:
+      exec algorithm
+    except SyntaxError as err:
+      error_class = err.__class__.__name__
+      detail = err.args[0]
+      line_number = err.lineno
+    except Exception as err:
+      error_class = err.__class__.__name__
+      detail = err.args[0]
+      cl, exc, tb = sys.exc_info()
+      line_number = traceback.extract_tb(tb)[-1][1]
+    else:
+      print "EROR!"
+      return
+    raise InterpreterError("%s at line %d of %s: %s" % (error_class, line_number, description, detail))
 
     print "22"
-    routingAlgorithm()
+    overallFunc()
 
     print "33"
 
@@ -213,4 +228,4 @@ def stylesheets(filename):
   return static_file(filename, root= str(root + '/static/images'))
 
 # open up server automatically
-run(host='localhost', port=9094)
+run(host='localhost', port=9494)
